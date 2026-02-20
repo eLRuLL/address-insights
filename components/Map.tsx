@@ -7,6 +7,7 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 export interface GeocodeInsights {
   walking_score?: number
   driving_score?: number
+  is_urban?: boolean
 }
 type GeocodeData = { lng: number; lat: number; insights?: GeocodeInsights }
 

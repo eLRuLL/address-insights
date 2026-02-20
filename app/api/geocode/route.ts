@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const WALKING_RADIUS_M = 800
+const WALKING_RADIUS_M = 200
 const TILEQUERY_LIMIT = 50
-
-const DRIVING_OFFSET_DEG = 0.0072 // because Mapbox tiles don't support more than 50 businesses around a point.
+const DRIVING_MAX_KM = 2
+const DRIVING_OFFSET_M = DRIVING_MAX_KM * 1000 - WALKING_RADIUS_M
+const DRIVING_OFFSET_DEG = DRIVING_OFFSET_M / 111_000
+const URBAN_THRESHOLD = 10
 
 const tilequeryUrl = (
   lon: number,
@@ -73,6 +75,7 @@ export async function GET(request: NextRequest) {
     insights: {
       walking_score: walkingCount,
       driving_score: drivingCount,
+      is_urban: walkingCount > URBAN_THRESHOLD,
     },
   })
 }

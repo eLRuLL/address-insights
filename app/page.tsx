@@ -41,17 +41,26 @@ export default function Home() {
       </form>
 
       {searchAddress && insights && (
-        <div className="flex gap-6 text-lg flex-col">
+        <div className="flex gap-6 text-lg flex-col items-center">
           {insights.walking_score !== undefined && (
             <div>
-              <strong>Walking score:</strong> {insights.walking_score} amenities
-              (800m)
+              <span className="font-bold">Walking score:</span>{' '}
+              {insights.walking_score} amenities (200m)
             </div>
           )}
           {insights.driving_score !== undefined && (
             <div>
-              <strong>Driving score:</strong> {insights.driving_score} amenities
-              (2km)
+              <span className="font-bold">Driving score:</span>{' '}
+              {insights.driving_score} amenities (2km)
+            </div>
+          )}
+          {insights.is_urban !== undefined && (
+            <div className="flex items-center gap-2">
+              {insights.is_urban ? (
+                <div className="text-green-500">Urban</div>
+              ) : (
+                <div className="text-red-500">Suburban</div>
+              )}
             </div>
           )}
         </div>
