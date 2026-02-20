@@ -12,8 +12,9 @@ const tilequeryUrl = (
   lat: number,
   radius: number,
   token: string,
+  layers = 'poi_label',
 ) =>
-  `https://api.mapbox.com/v4/mapbox.mapbox-streets-v8/tilequery/${lon},${lat}.json?access_token=${token}&radius=${radius}&limit=${TILEQUERY_LIMIT}&layers=poi_label&geometry=point`
+  `https://api.mapbox.com/v4/mapbox.mapbox-streets-v8/tilequery/${lon},${lat}.json?access_token=${token}&radius=${radius}&limit=${TILEQUERY_LIMIT}&layers=${layers}&geometry=point`
 
 export async function GET(request: NextRequest) {
   const address = request.nextUrl.searchParams.get('address')
@@ -47,20 +48,25 @@ export async function GET(request: NextRequest) {
     { lat, lng: lng - DRIVING_OFFSET_DEG },
   ]
 
-  const [walkingRes, ...cardinalRes] = await Promise.all([
+  const [walkingRes, transitRes, ...cardinalRes] = await Promise.all([
     fetch(tilequeryUrl(lng, lat, WALKING_RADIUS_M, token)),
+    fetch(tilequeryUrl(lng, lat, WALKING_RADIUS_M, token, 'transit_stop_label')),
     ...cardinalPoints.map((p) =>
       fetch(tilequeryUrl(p.lng, p.lat, WALKING_RADIUS_M, token)),
     ),
   ])
 
-  const walkingData = await walkingRes.json()
+  const [walkingData, transitData] = await Promise.all([
+    walkingRes.json(),
+    transitRes.json(),
+  ])
   const walkingPoints =
     walkingData.features?.map(
       (f: { geometry: { coordinates: [number, number] } }) =>
         f.geometry.coordinates,
     ) ?? []
   const walkingCount = walkingData.features?.length ?? 0
+  const transitCount = transitData.features?.length ?? 0
 
   const cardinalDatas = await Promise.all(cardinalRes.map((r) => r.json()))
   const seenIds = new Set<string | number>()
@@ -81,6 +87,7 @@ export async function GET(request: NextRequest) {
       walking_score: walkingCount,
       walking_points: walkingPoints,
       driving_score: drivingCount,
+      transit_score: transitCount,
       is_urban: walkingCount > URBAN_THRESHOLD,
     },
   })

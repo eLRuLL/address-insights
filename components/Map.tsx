@@ -15,6 +15,7 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 export interface GeocodeInsights {
   walking_score?: number
   driving_score?: number
+  transit_score?: number
   is_urban?: boolean
   walking_points?: [number, number][]
 }

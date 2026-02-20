@@ -66,6 +66,12 @@ function HomeContent() {
                 {insights.driving_score} amenities (2km)
               </div>
             )}
+            {insights.transit_score !== undefined && (
+              <div>
+                <span className="font-bold">Transit score:</span>{' '}
+                {insights.transit_score} stops (200m)
+              </div>
+            )}
             {insights.is_urban !== undefined && (
               <div className="flex items-center gap-2">
                 {insights.is_urban ? (
