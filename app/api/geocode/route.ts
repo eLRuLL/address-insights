@@ -55,6 +55,11 @@ export async function GET(request: NextRequest) {
   ])
 
   const walkingData = await walkingRes.json()
+  const walkingPoints =
+    walkingData.features?.map(
+      (f: { geometry: { coordinates: [number, number] } }) =>
+        f.geometry.coordinates,
+    ) ?? []
   const walkingCount = walkingData.features?.length ?? 0
 
   const cardinalDatas = await Promise.all(cardinalRes.map((r) => r.json()))
@@ -74,6 +79,7 @@ export async function GET(request: NextRequest) {
     lat,
     insights: {
       walking_score: walkingCount,
+      walking_points: walkingPoints,
       driving_score: drivingCount,
       is_urban: walkingCount > URBAN_THRESHOLD,
     },
