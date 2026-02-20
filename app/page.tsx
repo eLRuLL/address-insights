@@ -1,13 +1,17 @@
 'use client'
 
 import Map from '@/components/Map'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useState } from 'react'
 import type { GeocodeInsights } from '@/components/Map'
 import { useSearchHistory } from '@/hooks/useSearchHistory'
 
 export default function Home() {
-  const [address, setAddress] = useState<string>('')
-  const [searchAddress, setSearchAddress] = useState<string>('')
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const urlAddress = searchParams.get('address') ?? ''
+  const [address, setAddress] = useState(() => urlAddress)
+  const [searchAddress, setSearchAddress] = useState(() => urlAddress)
   const [insights, setInsights] = useState<GeocodeInsights | null>(null)
   const { history, addToHistory, clearHistory } = useSearchHistory()
 
@@ -15,6 +19,7 @@ export default function Home() {
     e.preventDefault()
     setSearchAddress(address)
     setInsights(null)
+    router.replace(`/?address=${encodeURIComponent(address)}`)
   }
 
   const handleGeocodeData = useCallback(
