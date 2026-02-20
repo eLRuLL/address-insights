@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Address Insights
 
-## Getting Started
+Explore location insights for any address: walkability, driving accessibility, transit access, and urban/suburban classification.
 
-First, run the development server:
+**Live app:** [https://address-insights-three.vercel.app/](https://address-insights-three.vercel.app/)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What I Built vs AI-Generated
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Personally built / owned:**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Project setup and architecture decisions
+- Feature requirements (walking score, driving score, transit score, urban/suburban index, search history, share via URL)
+- Design choices (e.g. address in URL for sharing, Mapbox-only, localStorage for history)
+- Token and security setup (client vs server tokens, scopes)
+- Testing and deployment to Vercel
+- Review and iteration on implementations
+- Walking, driving (5-point sampling), and transit score logic using Mapbox Tilequery
+- Urban/suburban classification from POI density
+- Geocoding API route
+- Search history with `useSearchHistory` hook and sidebar UI
+- Share feature with address in URL
 
-## Learn More
+**AI-assisted implementation:**
 
-To learn more about Next.js, take a look at the following resources:
+- Mapbox map integration
+- Walking radius circle and POI markers on the map
+- Suspense boundaries and SSR-safe localStorage handling
+- Automatic Readme generation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Approach to Solving the Problem
 
-## Deploy on Vercel
+1. **Start simple** – Single Mapbox map with geocoding, then add scores incrementally.
+2. **Server-side for sensitive calls** – Geocoding and Tilequery run in an API route so tokens and keys stay on the server.
+3. **Reuse data** – Walking POI data is reused for driving (center + 4 cardinal points) to reduce API calls.
+4. **Work within limits** – Tilequery returns up to 50 features per request; driving score uses 5 overlapping circles to get a broader sample and deduplicate by feature ID.
+5. **Keep history local** – Search history in `localStorage` to avoid backend storage and keep it device-specific.
+6. **Share through the URL** – Address in query params (`?address=...`) so links can be shared and the same search loads when opened.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Assumptions & Design Decisions
+
+| Decision                       | Rationale                                                                         |
+| ------------------------------ | --------------------------------------------------------------------------------- |
+| **Mapbox only**                | Single vendor for geocoding, Tilequery, and map tiles; no Overpass or other POIs. |
+| **200m walking radius**        | Short walk; scores are tuned for that distance.                                   |
+| **2km driving radius**         | Offset derived from `DRIVING_MAX_KM`; 5 circles at center + N/S/E/W for sampling. |
+| **Address in URL for sharing** | No unique IDs or backend; links are self-contained and work without a database.   |
+| **`localStorage` for history** | No auth or server storage; history stays on the device.                           |
+| **Separate tokens**            | Public token for map display, server token for geocoding/Tilequery.               |
+| **Urban = >10 POIs in 200m**   | Simple density rule for urban/suburban classification.                            |
+
+---
+
+## Tech Stack
+
+- Next.js 16 (App Router)
+- Mapbox GL JS & Geocoding API
+- Tailwind CSS
+- TypeScript
