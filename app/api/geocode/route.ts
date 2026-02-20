@@ -1,5 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+const WALKING_RADIUS_M = 800
+const TILEQUERY_LIMIT = 50
+
+const DRIVING_OFFSET_DEG = 0.0072 // because Mapbox tiles don't support more than 50 businesses around a point.
+
+const tilequeryUrl = (
+  lon: number,
+  lat: number,
+  radius: number,
+  token: string,
+) =>
+  `https://api.mapbox.com/v4/mapbox.mapbox-streets-v8/tilequery/${lon},${lat}.json?access_token=${token}&radius=${radius}&limit=${TILEQUERY_LIMIT}&layers=poi_label&geometry=point`
+
 export async function GET(request: NextRequest) {
   const address = request.nextUrl.searchParams.get('address')
   if (!address) {
@@ -14,16 +27,52 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${token}&limit=1`
+  const geocodeUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${token}&limit=1`
+  const geocodeRes = await fetch(geocodeUrl)
+  const geocodeData = await geocodeRes.json()
 
-  const res = await fetch(url)
-  const data = await res.json()
-
-  const feature = data.features?.[0]
+  const feature = geocodeData.features?.[0]
   if (!feature) {
     return NextResponse.json({ error: 'Address not found' }, { status: 404 })
   }
 
   const [lng, lat] = feature.center
-  return NextResponse.json({ lng, lat })
+
+  const cardinalPoints = [
+    { lat: lat + DRIVING_OFFSET_DEG, lng },
+    { lat: lat - DRIVING_OFFSET_DEG, lng },
+    { lat, lng: lng + DRIVING_OFFSET_DEG },
+    { lat, lng: lng - DRIVING_OFFSET_DEG },
+  ]
+
+  const [walkingRes, ...cardinalRes] = await Promise.all([
+    fetch(tilequeryUrl(lng, lat, WALKING_RADIUS_M, token)),
+    ...cardinalPoints.map((p) =>
+      fetch(tilequeryUrl(p.lng, p.lat, WALKING_RADIUS_M, token)),
+    ),
+  ])
+
+  const walkingData = await walkingRes.json()
+  const walkingCount = walkingData.features?.length ?? 0
+
+  const cardinalDatas = await Promise.all(cardinalRes.map((r) => r.json()))
+  const seenIds = new Set<string | number>()
+  for (const f of walkingData.features ?? []) {
+    if (f.id != null) seenIds.add(f.id)
+  }
+  for (const data of cardinalDatas) {
+    for (const f of data.features ?? []) {
+      if (f.id != null) seenIds.add(f.id)
+    }
+  }
+  const drivingCount = seenIds.size
+
+  return NextResponse.json({
+    lng,
+    lat,
+    insights: {
+      walking_score: walkingCount,
+      driving_score: drivingCount,
+    },
+  })
 }

@@ -1,16 +1,26 @@
 'use client'
 
 import Map from '@/components/Map'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
+import type { GeocodeInsights } from '@/components/Map'
 
 export default function Home() {
   const [address, setAddress] = useState<string>('')
   const [searchAddress, setSearchAddress] = useState<string>('')
+  const [insights, setInsights] = useState<GeocodeInsights | null>(null)
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setSearchAddress(address)
+    setInsights(null)
   }
+
+  const handleGeocodeData = useCallback(
+    (data: { insights?: GeocodeInsights | null }) => {
+      setInsights(data.insights ?? null)
+    },
+    [],
+  )
 
   return (
     <main className="p-8 flex flex-col items-center justify-center gap-4">
@@ -30,7 +40,24 @@ export default function Home() {
         </button>
       </form>
 
-      <Map address={searchAddress} />
+      {searchAddress && insights && (
+        <div className="flex gap-6 text-lg flex-col">
+          {insights.walking_score !== undefined && (
+            <div>
+              <strong>Walking score:</strong> {insights.walking_score} amenities
+              (800m)
+            </div>
+          )}
+          {insights.driving_score !== undefined && (
+            <div>
+              <strong>Driving score:</strong> {insights.driving_score} amenities
+              (2km)
+            </div>
+          )}
+        </div>
+      )}
+
+      <Map address={searchAddress} onData={handleGeocodeData} />
     </main>
   )
 }

@@ -4,11 +4,18 @@ import { useEffect, useRef } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
+export interface GeocodeInsights {
+  walking_score?: number
+  driving_score?: number
+}
+type GeocodeData = { lng: number; lat: number; insights?: GeocodeInsights }
+
 type MapProps = {
   address?: string
+  onData?: (data: GeocodeData) => void
 }
 
-export default function Map({ address }: MapProps) {
+export default function Map({ address, onData }: MapProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstance = useRef<mapboxgl.Map | null>(null)
   const markerRef = useRef<mapboxgl.Marker | null>(null)
@@ -52,9 +59,11 @@ export default function Map({ address }: MapProps) {
 
     fetch(`/api/geocode?address=${encodeURIComponent(address)}`)
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: GeocodeData & { error?: string }) => {
         if (data.error) return
         const { lng, lat } = data
+
+        onData?.(data)
 
         mapInstance.current?.flyTo({ center: [lng, lat], zoom: 14 })
 
@@ -64,7 +73,7 @@ export default function Map({ address }: MapProps) {
           .addTo(mapInstance.current!)
       })
       .catch(console.error)
-  }, [address])
+  }, [address, onData])
 
   return <div ref={mapRef} className="h-[400px] w-full rounded-lg" />
 }
