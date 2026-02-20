@@ -1,6 +1,6 @@
 # Address Insights
 
-Explore location insights for any address: walkability, driving accessibility, transit access, and urban/suburban classification.
+Explore location insights for any address: walkability, driving accessibility, transit access, close amenities, and urban/suburban classification.
 
 **Live app:** [https://address-insights-three.vercel.app/](https://address-insights-three.vercel.app/)
 
