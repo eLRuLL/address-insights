@@ -2,11 +2,11 @@
 
 import Map from '@/components/Map'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 import type { GeocodeInsights } from '@/components/Map'
 import { useSearchHistory } from '@/hooks/useSearchHistory'
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const urlAddress = searchParams.get('address') ?? ''
@@ -101,5 +101,19 @@ export default function Home() {
         </button>
       </div>
     </main>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense
+      fallback={
+        <main className="p-8 flex items-center justify-center min-h-[400px]">
+          Loading...
+        </main>
+      }
+    >
+      <HomeContent />
+    </Suspense>
   )
 }
